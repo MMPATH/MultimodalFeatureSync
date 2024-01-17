@@ -2,7 +2,6 @@ import os
 import torch
 import opensmile
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 from transformers import BertTokenizer, BertModel
 from config import acoustic_dir, facial_dir, linguistic_dir

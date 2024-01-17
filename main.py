@@ -90,7 +90,7 @@ def process_file_features(file_path, speaker_label):
     extract_facial_features(of_bin_loc, video_dir, base_fname)
 
     # Step 5: Data Resampling
-    print(f"Resampling features")
+    print("Resampling features")
     # Read the feature files
     facial_features_path = os.path.join(facial_dir, f"{base_fname}.csv")
     vocal_features_path = os.path.join(acoustic_dir, f"{base_fname}.csv")
@@ -113,7 +113,7 @@ def process_file_features(file_path, speaker_label):
         linguistic_features)
 
     # Step 6: Feature Combination
-    print(f"Combining features")
+    print("Combining features")
     combined_features = combine_features(
         facial_features_resampled,
         vocal_features_resampled,
