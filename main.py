@@ -87,11 +87,10 @@ def process_file_features(file_path, speaker_label):
     extract_linguistic_features(rolling_signal_window, use_auth_token,
                                 base_fname)
     print(f"Extracting facial features from video file: {file_path}")
-    facial_features = extract_facial_features(of_bin_loc, video_dir,
-                                              base_fname)
+    extract_facial_features(of_bin_loc, video_dir, base_fname)
 
     # Step 5: Data Resampling
-    print(f"Resampling features from audio file: {audio_file}")
+    print(f"Resampling features")
     # Read the feature files
     facial_features_path = os.path.join(facial_dir, f"{base_fname}.csv")
     vocal_features_path = os.path.join(acoustic_dir, f"{base_fname}.csv")
@@ -114,7 +113,7 @@ def process_file_features(file_path, speaker_label):
         linguistic_features)
 
     # Step 6: Feature Combination
-    print(f"Combining features from audio file: {audio_file}")
+    print(f"Combining features")
     combined_features = combine_features(
         facial_features_resampled,
         vocal_features_resampled,

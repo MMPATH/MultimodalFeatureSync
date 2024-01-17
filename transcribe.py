@@ -7,7 +7,31 @@ from tqdm import tqdm
 def transcribe_rolling_window(rolling_window,
                               return_full_output=False,
                               version="base"):
-    """Transcribe a rolling window of audio using Whisper"""
+    """
+    Transcribes audio segments using the Whisper model.
+
+    This function processes each segment in a rolling window of audio data,
+    transcribing the content using the Whisper machine learning model. It can
+    return either the full output of the transcription, including additional
+    metadata, or just the transcribed text.
+
+    Args:
+    rolling_window (numpy.ndarray): A 2D array where each row is an audio
+                                    segment to be transcribed.
+    return_full_output (bool, optional): If True, the function returns the
+                                         full output of the Whisper model,
+                                         including metadata. If False, only
+                                         the transcribed text is returned.
+                                         Defaults to False.
+    version (str, optional): The version of the Whisper model to use.
+                             Defaults to 'base'.
+
+    Returns:
+    list: If return_full_output is False, a list of strings, each representing
+          the transcription of an audio segment.
+          If return_full_output is True, a list of dictionaries containing
+          full transcription outputs from Whisper.
+    """
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device: {}".format(device))

@@ -128,8 +128,6 @@ def extract_facial_features(of_bin_loc, video_dir, base_fname):
     None
     """
     vid_loc = os.path.join(video_dir, f"{base_fname}.mp4")
-    extract_faus(of_bin_loc, vid_loc, facial_dir)
-
-    facial_features_path = os.path.join(facial_dir, f"{base_fname}.csv")
-    facial_features = pd.read_csv(facial_features_path)
-    return facial_features
+    command = f"{of_bin_loc} -f {vid_loc} -out_dir {facial_dir}"
+    print(command)
+    os.system(command)
