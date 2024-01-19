@@ -112,6 +112,7 @@ def extract_linguistic_features(rolling_window, use_auth_token, output_fname):
     linguistic_features = gen_sentence_embeddings(transcription_output)
     np.save(os.path.join(linguistic_dir, f"{output_fname}.npy"),
             linguistic_features)
+    return linguistic_features
 
 
 def extract_facial_features(of_bin_loc, video_dir, base_fname):
@@ -127,6 +128,7 @@ def extract_facial_features(of_bin_loc, video_dir, base_fname):
     None
     """
     vid_loc = os.path.join(video_dir, f"{base_fname}.mp4")
-    command = f"{of_bin_loc} -f {vid_loc} -out_dir {facial_dir}"
+    command = f"{of_bin_loc} -f {vid_loc} -out_dir {facial_dir} \
+        -2Dfp -3Dfp -pdmparams -pose -aus -gaze"
     print(command)
     os.system(command)

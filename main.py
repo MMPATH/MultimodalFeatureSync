@@ -19,7 +19,6 @@ from extract_features import (
     extract_linguistic_features,
     extract_facial_features,
 )
-from feature_combination import combine_features
 from config import (
     audio_dir,
     video_dir,
@@ -77,17 +76,33 @@ def process_file_features(file_path, speaker_label):
     signal = librosa.load(audio_file, sr=16000)[0]
 
     # Step 4: Feature Extraction
+    # Check for existing feature files
+    skip_acoustic = False
+    skip_linguistic = False
+    skip_facial = False
+    if os.path.exists(os.path.join(acoustic_dir, f"{base_fname}.csv")):
+        print("Features already extracted for this file, skipping acoustic.")
+        skip_acoustic = True
+    if os.path.exists(os.path.join(linguistic_dir, f"{base_fname}.npy")):
+        print("Features already extracted for this file, skipping linguistic.")
+        skip_linguistic = True
+    if os.path.exists(os.path.join(facial_dir, f"{base_fname}.csv")):
+        print("Features already extracted for this file, skipping facial.")
+        skip_facial = True
     # Create rolling window
     window_size = seconds_to_samples(5)
     step_size = seconds_to_samples(1)
     rolling_signal_window = rolling_window(signal, window_size, step_size)
-    print(f"Extracting acoustic features from audio file: {audio_file}")
-    extract_acoustic_features(signal, base_fname)
-    print(f"Extracting linguistic features from audio file: {audio_file}")
-    extract_linguistic_features(rolling_signal_window, use_auth_token,
-                                base_fname)
-    print(f"Extracting facial features from video file: {file_path}")
-    extract_facial_features(of_bin_loc, video_dir, base_fname)
+    if not skip_acoustic:
+        print(f"Extracting acoustic features from audio file: {audio_file}")
+        extract_acoustic_features(signal, base_fname)
+    if not skip_linguistic:
+        print(f"Extracting linguistic features from audio file: {audio_file}")
+        extract_linguistic_features(rolling_signal_window,
+                                    use_auth_token, base_fname)
+    if not skip_facial:
+        print(f"Extracting facial features from video file: {file_path}")
+        extract_facial_features(of_bin_loc, video_dir, base_fname)
 
     # Step 5: Data Resampling
     print("Resampling features")
@@ -109,19 +124,22 @@ def process_file_features(file_path, speaker_label):
     facial_features_resampled = resample_facial_features(
         facial_features, vocal_features_resampled.index
     )
-    linguistic_features_resampled = resample_linguistic_features(
-        linguistic_features)
+    linguistic_features_resampled = \
+        resample_linguistic_features(linguistic_features)
 
     # Step 6: Feature Combination
     print("Combining features")
-    combined_features = combine_features(
-        facial_features_resampled,
-        vocal_features_resampled,
-        linguistic_features_resampled,
+    combined_features = pd.concat(
+        [
+            facial_features_resampled,
+            vocal_features_resampled,
+            linguistic_features_resampled,
+        ],
+        axis=1,
     )
+    combined_features = combined_features.dropna()
     combined_features.to_csv(
-        os.path.join("./features/combined", f"{base_fname}_combined.csv")
-    )
+        os.path.join("./features/combined", f"{base_fname}.csv"))
 
 
 def main():

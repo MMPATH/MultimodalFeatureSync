@@ -139,8 +139,8 @@ def resample_linguistic_features(linguistic_features):
     """
     linguistic_features_df = pd.DataFrame(linguistic_features)
     rounded_time_index = np.arange(
-        0, len(linguistic_features) * (1 / 100), 1 / 100
-    )  # Based on vocal_sr
+        0, len(linguistic_features), 1 / 100
+    )  # assumes window step size of 1 second
     linguistic_features_resampled = linguistic_features_df.reindex(
         rounded_time_index, method="nearest"
     )
