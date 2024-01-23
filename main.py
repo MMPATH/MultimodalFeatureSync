@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import soundfile as sf
 import librosa
+import glob
+from tqdm import tqdm
 from video_preprocessing import process_video
 from utilities import (
     convert_mp4_to_wav,
@@ -47,9 +49,21 @@ def process_file_diarization(file_path):
     # Step 2: Audio Extraction
     print(f"Extracting audio from video file: {file_path}")
     audio_file = f"{base_fname}.wav"
-    convert_mp4_to_wav(file_path, os.path.join(audio_dir, audio_file))
+    # Check if audio file already exists
+    if not os.path.exists(os.path.join(audio_dir, audio_file)):
+        convert_mp4_to_wav(file_path, os.path.join(audio_dir, audio_file))
+    else:
+        print("Audio file already exists, skipping conversion.")
 
     # Step 3: Audio Processing
+    s1_write_path = os.path.join(audio_dir, f"{base_fname}_s1.wav")
+    s2_write_path = os.path.join(audio_dir, f"{base_fname}_s2.wav")
+
+    # Check if diarized audio files already exist
+    if os.path.exists(s1_write_path) and os.path.exists(s2_write_path):
+        print("Diarized audio files already exist, skipping diarization.")
+        return
+
     print(f"Processing audio file: {audio_file}")
     signal, R1, R2 = load_and_diarize_audio(base_fname, audio_dir,
                                             use_auth_token)
@@ -57,8 +71,8 @@ def process_file_diarization(file_path):
     s2_signal = keep_ranges(signal, R2)
 
     # Save the diarized signals
-    sf.write(os.path.join(audio_dir, f"{base_fname}_s1.wav"), s1_signal, 16000)
-    sf.write(os.path.join(audio_dir, f"{base_fname}_s2.wav"), s2_signal, 16000)
+    sf.write(s1_write_path, s1_signal, 16000)
+    sf.write(s2_write_path, s2_signal, 16000)
 
 
 def process_file_features(file_path, speaker_label):
@@ -146,7 +160,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Process video files for diarization / feature extraction."
     )
-    parser.add_argument("input_path", help="Path to the input file")
+    parser.add_argument(
+        "input_path", help="Path to the input directory containing MP4 files")
     parser.add_argument(
         "--stage",
         choices=["diarization", "features"],
@@ -160,13 +175,17 @@ def main():
 
     args = parser.parse_args()
 
-    if args.stage == "diarization":
-        process_file_diarization(args.input_path)
-    elif args.stage == "features" and args.speaker:
-        process_file_features(args.input_path, args.speaker)
-    else:
-        print("Invalid arguments.")
-        print("Please specify a processing stage and speaker label.")
+    # Get all MP4 files in the directory
+    file_paths = glob.glob(os.path.join(args.input_path, "*.mp4"))
+
+    for file_path in tqdm(file_paths, desc="Processing files"):
+        if args.stage == "diarization":
+            process_file_diarization(file_path)
+        elif args.stage == "features" and args.speaker:
+            process_file_features(file_path, args.speaker)
+        else:
+            print("Invalid arguments.")
+            print("Please specify a processing stage and speaker label.")
 
 
 if __name__ == "__main__":

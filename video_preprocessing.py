@@ -85,6 +85,7 @@ def process_video(source_path, target_dir):
     Returns:
     bool: True if processing is successful, False otherwise.
     """
+
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
@@ -92,14 +93,27 @@ def process_video(source_path, target_dir):
     temp_path = os.path.join(target_dir, f"temp_{filename}")
     target_path = os.path.join(target_dir, filename)
 
+    # If temp_path already eixst, delete it
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
+    
+    # If target_path already exists, skip this file
+    if os.path.exists(target_path):
+        print(f"File already exists, skipping {filename}")
+        # Make a logfile entry here
+        return True
+
     if crop_video(source_path, temp_path) and reencode_video(temp_path,
                                                              target_path):
         os.remove(
             temp_path
         )  # Remove the temporary file only if re-encoding is successful
+        # Make a logfile entry here
         return True
     else:
         print(f"Re-encoding failed for {filename}")
+        # Make a logfile entry here
+
         return False
 
 

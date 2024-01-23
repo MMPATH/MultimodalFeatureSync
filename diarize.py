@@ -7,10 +7,9 @@ from tqdm import tqdm
 from utilities import load_wav_file
 
 
-def diarize(directory, use_auth_token, num_speakers=2, gpu=True):
+def diarize(file_path, use_auth_token, num_speakers=2, gpu=True):
     """
-    Performs speaker diarization on all .wav files within a specified
-    directory.
+    Performs speaker diarization on a .wav file.
 
     Diarization segments the audio files into speaker turns and labels each
     segment with a speaker identifier.
@@ -41,24 +40,15 @@ def diarize(directory, use_auth_token, num_speakers=2, gpu=True):
         )
 
     utterance_info = []  # Generate list to store output data
-    files = os.listdir("./" + directory)  # Create list of files in directory
-    files.sort()  # Sort the files list
 
     # Import pretrained diarization pipeline from pyanote
     pipeline = Pipeline.from_pretrained(
         "pyannote/speaker-diarization@2.1", use_auth_token=use_auth_token
     )
 
-    # Pyannote diarization loop
-    for file in tqdm(files):
-        dia = pipeline(os.path.join(directory, file),
-                       num_speakers=num_speakers)
-        assert isinstance(dia, Annotation)
-        for speech_turn, _, speaker in dia.itertracks(yield_label=True):
-            utterance_info.append([speech_turn.start,
-                                   speech_turn.end,
-                                   speaker,
-                                   file])
+    dia = pipeline(file_path, num_speakers=num_speakers)
+    for speech_turn, _, speaker in dia.itertracks(yield_label=True):
+        utterance_info.append([speech_turn.start, speech_turn.end, speaker, file_path])
     return utterance_info
 
 
@@ -87,6 +77,7 @@ def remove_overlap(diarization_info):
 
     speakers = list(ranges.keys())
     speakers.sort()
+    print(f"Found speakers: {speakers}")
 
     if len(speakers) != 2:
         raise AssertionError("Expected only two speakers")
@@ -139,7 +130,7 @@ def remove_overlap(diarization_info):
             if break_loop(i, j, max_i, max_j):
                 break
             c = R2[j][0]
-            d = R2[j][0]
+            d = R2[j][1]
             continue
 
         if a < c and c < b:
@@ -234,13 +225,11 @@ def keep_ranges(signal, ranges, seconds=True, sample_rate=16000):
     """
     # If seconds is True, convert to samples
     if seconds:
-        ranges = [
-            (int(r[0] * sample_rate), int(r[1] * sample_rate)) for r in ranges
-        ]
+        ranges = [(int(r[0] * sample_rate), int(r[1] * sample_rate)) for r in ranges]
 
     new_signal = np.zeros(len(signal))
     for tup in ranges:
-        new_signal[tup[0]: tup[1]] = signal[tup[0]: tup[1]]
+        new_signal[tup[0] : tup[1]] = signal[tup[0] : tup[1]]
     return new_signal
 
 
@@ -259,6 +248,7 @@ def load_and_diarize_audio(base_fname, audio_dir, use_auth_token):
            speakers (R1, R2).
     """
     signal = load_wav_file(base_fname + ".wav", audio_dir)
-    diarization_info = diarize(audio_dir, use_auth_token)
+    file_path = os.path.join(audio_dir, base_fname + ".wav")
+    diarization_info = diarize(file_path, use_auth_token)
     R1, R2 = remove_overlap(diarization_info)
     return signal, R1, R2
