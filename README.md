@@ -59,19 +59,25 @@ set PYANNOTE_AUTH_TOKEN=your_token_here
 set OPENFACE_BIN_LOC=\path\to\OpenFace\bin\FeatureExtraction
 ```
 
+To accurately reflect the changes in your script, the usage instructions in your README file need to be updated. The new instructions should specify that the diarization stage does not require the CSV file, while the feature extraction stage does. Here's the updated usage section:
+
 ## Usage
 
-To use the pipeline, run `main.py` with the appropriate arguments:
+To use the pipeline, run `process_pipeline.py` with the appropriate arguments:
 
 - For diarization:
+  Process all video files in a specified directory for diarization. No need for the CSV file in this stage.
   ```bash
-  python main.py /path/to/video.mp4 --stage diarization
+  python process_pipeline.py /path/to/mp4/files/ --stage diarization
   ```
 
-- For feature extraction (after diarization and speaker identification):
+- For feature extraction (after diarization):
+  Process all video files in a specified directory for feature extraction. This stage requires the path to a CSV file containing speaker labels to identify the patient's speech.
   ```bash
-  python main.py /path/to/video.mp4 --stage features --speaker s1
+  python process_pipeline.py /path/to/mp4/files/ /path/to/speaker_labels.csv --stage features
   ```
+
+Ensure to replace `/path/to/mp4/files/` with the actual path to your directory containing MP4 files and `/path/to/speaker_labels.csv` with the path to your CSV file containing the speaker labels. We have included `example_speaker_labels` so you can create your own.
 
 ## License
 
