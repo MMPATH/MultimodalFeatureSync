@@ -3,37 +3,46 @@ import os
 import subprocess
 
 
-def crop_video(source_path, temp_path):
+def crop_video(source_path, temp_path, crop_side="left"):
     """
-    Crops the left half of each frame in the given video file and saves it as
+    Crops the specified half of each frame in the given video file and saves it as
     a temporary file.
 
     Args:
-    source_path (str): Path to the source video file to be cropped.
-    temp_path (str): Path where the cropped temporary video file will be saved.
+        source_path (str): Path to the source video file to be cropped.
+        temp_path (str): Path where the cropped temporary video file will be saved.
+        crop_side (str): The side of the video to be cropped. Can be either "left"
+                         or "right". Defaults to "left".
 
     Returns:
-    bool: True if the video was successfully cropped and saved, False
-          otherwise.
+        bool: True if the video was successfully cropped and saved, False
+              otherwise.
     """
     cap = cv2.VideoCapture(source_path)
     if not cap.isOpened():
         print(f"Error opening file {source_path}")
         return False
 
-    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) / 2)
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
 
-    out = cv2.VideoWriter(temp_path, fourcc, fps, (frame_width, frame_height))
+    if crop_side == "left":
+        out = cv2.VideoWriter(temp_path, fourcc, fps, (frame_width // 2, frame_height))
+        crop_range = (0, frame_width // 2)
+    elif crop_side == "right":
+        out = cv2.VideoWriter(temp_path, fourcc, fps, (frame_width // 2, frame_height))
+        crop_range = (frame_width // 2, frame_width)
+    else:
+        print(f"Invalid crop_side value: {crop_side}. Expected 'left' or 'right'.")
+        return False
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
-
-        cropped_frame = frame[:, :frame_width]
+        cropped_frame = frame[:, crop_range[0]:crop_range[1]]
         out.write(cropped_frame)
 
     cap.release()
@@ -74,7 +83,7 @@ def reencode_video(temp_path, target_path):
     return result.returncode == 0
 
 
-def process_video(source_path, target_dir):
+def process_video(source_path, target_dir, crop_side="left"):
     """
     Process a single video file - cropping and re-encoding.
 
@@ -103,7 +112,7 @@ def process_video(source_path, target_dir):
         # Make a logfile entry here
         return True
 
-    if crop_video(source_path, temp_path) and reencode_video(temp_path,
+    if crop_video(source_path, temp_path, crop_side) and reencode_video(temp_path,
                                                              target_path):
         os.remove(
             temp_path

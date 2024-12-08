@@ -33,7 +33,7 @@ from config import (
 )
 
 
-def process_file_diarization(file_path):
+def process_file_diarization(file_path, crop_side):
     """
     Process a single file through the diarization part of the pipeline.
 
@@ -45,7 +45,7 @@ def process_file_diarization(file_path):
 
     # Step 1: Video Preprocessing
     print(f"Processing video file: {file_path}")
-    process_video(file_path, video_dir)
+    process_video(file_path, video_dir, crop_side)
 
     # Step 2: Audio Extraction
     print(f"Extracting audio from video file: {file_path}")
@@ -159,6 +159,25 @@ def process_file_features(file_path, speaker_label):
 
 import csv
 
+def read_patient_sides(csv_path):
+    """
+    Read the CSV file and return a dictionary mapping file names to patient sides.
+
+    Args:
+    csv_path (str): Path to the CSV file.
+
+    Returns:
+    dict: A dictionary mapping file names to patient sides ('left' or 'right').
+    """
+    patient_sides = {}
+    with open(csv_path, mode="r", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            file_name_base = row["File Name (Base)"]
+            patient_side = row["patient_side"]
+            patient_sides[file_name_base] = patient_side
+    return patient_sides
+
 
 def read_speaker_labels(csv_path, identity="patient"):
     """
@@ -188,7 +207,7 @@ def main():
         "input_path", help="Path to the input directory containing MP4 files"
     )
     parser.add_argument(
-        "--csv_path", help="Optional: Path to the CSV file containing speaker labels", default=None
+        "--csv_path", help="Path to the CSV file containing speaker labels"
     )
     parser.add_argument(
         "--stage",
@@ -202,16 +221,17 @@ def main():
     file_paths = glob.glob(os.path.join(args.input_path, "*.mp4"))
 
     if args.stage == "diarization":
+        # Read patient sides from the CSV file
+        patient_sides = read_patient_sides(args.csv_path)
+
         for file_path in tqdm(file_paths, desc="Processing files"):
-            process_file_diarization(file_path)
+            base_fname = os.path.splitext(os.path.basename(file_path))[0]
+            patient_side = patient_sides.get(base_fname, "left")  # Default to "left" if not found
+            process_file_diarization(file_path, patient_side)
 
     elif args.stage == "features":
-        if args.csv_path is None:
-            print("CSV path is required for feature extraction stage.")
-            return
-
         # Read speaker labels from the CSV file
-        speaker_labels = read_speaker_labels(args.csv_path)
+        speaker_labels = read_speaker_labels(args.csv_path, identity="patient")
 
         for file_path in tqdm(file_paths, desc="Processing files"):
             base_fname = os.path.splitext(os.path.basename(file_path))[0]
@@ -222,6 +242,7 @@ def main():
                 print(f"Speaker label for {base_fname} not found in CSV.")
     else:
         print("Invalid stage argument. Please choose 'diarization' or 'features'.")
+
 
 if __name__ == "__main__":
     main()

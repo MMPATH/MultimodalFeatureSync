@@ -6,6 +6,9 @@ from pyannote.core import Annotation
 from tqdm import tqdm
 from utilities import load_wav_file
 
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module='lightning_fabric.utilities.cloud_io')
+
 
 def diarize(file_path, use_auth_token, num_speakers=2, gpu=True):
     """
@@ -43,8 +46,9 @@ def diarize(file_path, use_auth_token, num_speakers=2, gpu=True):
 
     # Import pretrained diarization pipeline from pyanote
     pipeline = Pipeline.from_pretrained(
-        "pyannote/speaker-diarization@2.1", use_auth_token=use_auth_token
-    )
+        "pyannote/speaker-diarization-3.1",
+        use_auth_token=use_auth_token
+        )
 
     dia = pipeline(file_path, num_speakers=num_speakers)
     for speech_turn, _, speaker in dia.itertracks(yield_label=True):
